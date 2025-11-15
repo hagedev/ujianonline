@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Admin - Hasil Tes</title>
+    <!-- 1. Muat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Kontainer Aplikasi Utama -->
+    <div id="app-container" class="w-full">
+
+        <!-- ============================================= -->
+        <!-- BAGIAN ADMIN LOGIN                            -->
+        <!-- ============================================= -->
+        <div id="admin-login-screen" class="min-h-screen hidden flex items-center justify-center p-4">
+            <div class="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8 space-y-6">
+                <h2 class="text-2xl font-bold text-center text-gray-800">Login Admin</h2>
+                <div>
+                    <label for="password-input" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password-input" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p id="password-error" class="text-red-500 text-sm mt-2 hidden">Password salah. Silakan coba lagi.</p>
+                </div>
+                <button id="login-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">
+                    Masuk
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- BAGIAN ADMIN (DASBOR)                         -->
+        <!-- ============================================= -->
+        <div id="admin-app" class="min-h-screen hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 shadow-md">
+                <h1 class="text-3xl font-bold container mx-auto max-w-5xl">Dasbor Hasil Tes Karyawan</h1>
+                <p class="container mx-auto max-w-5xl opacity-90">BPR Indra Arta</p>
+            </div>
+
+            <div class="container mx-auto max-w-5xl p-6">
+                <div id="loading-status" class="text-center p-10 bg-white rounded-lg shadow">
+                    <p class="text-lg font-medium text-gray-600">Menghubungkan ke database...</p>
+                </div>
+                <div id="results-list" class="hidden space-y-4">
+                    <div class="hidden md:grid grid-cols-4 gap-4 font-semibold text-gray-600 bg-gray-50 p-4 rounded-lg">
+                        <div>Nama Peserta</div>
+                        <div>Skor</div>
+                        <div>Detail Jawaban</div>
+                        <div>Waktu Pengerjaan</div>
+                    </div>
+                    <div id="results-content"></div>
+                    <div id="empty-message" class="hidden text-center p-10 bg-white rounded-lg shadow">
+                        <p class="text-lg text-gray-500">Belum ada hasil tes yang masuk.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script akan diubah menjadi module untuk Firebase -->
+    <script type="module">
+        // --- 0. IMPORT FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, setLogLevel, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Inisialisasi Firebase ---
+        // INI ADALAH KONFIGURASI YANG SAMA DENGAN index.html
+        const firebaseConfig = {
+          apiKey: "AIzaSyDudaHFKePqDSV7ALhdJ04vFxxPQV2wX4g",
+          authDomain: "ujianonline-d7c7c.firebaseapp.com",
+          projectId: "ujianonline-d7c7c",
+          storageBucket: "ujianonline-d7c7c.firebasestorage.app",
+          messagingSenderId: "809335532472",
+          appId: "1:809335532472:web:20b34ac5d4b81f4f84fd4d",
+          measurementId: "G-93X84KKG5G"
+        };
+        
+        let db, auth;
+        
+        try {
+            // Inisialisasi Firebase dengan config Anda
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            setLogLevel('Debug'); 
+            
+            // Login secara anonim (wajib untuk bisa akses database)
+            await signInAnonymously(auth);
+            console.log("Firebase auth successful (GitHub Mode)");
+        } catch (error) {
+            console.error("Firebase auth failed:", error);
+            const appContainer = document.getElementById('app-container');
+            const errorMsg = `<div class="p-8 text-center text-red-600">Gagal terhubung ke Firebase. Pastikan konfigurasi Firebase Anda benar dan Anda sudah mengaktifkan 'Anonymous Sign-In' di dasbor Firebase. Error: ${error.message}</div>`;
+            if (appContainer) {
+                appContainer.innerHTML = errorMsg;
+            } else {
+                document.body.innerHTML = errorMsg;
+            }
+        }
+
+        // ==========================================
+        // KODE UNTUK ADMIN
+        // ==========================================
+        
+        // Referensi DOM Admin
+        const adminLoginScreen = document.getElementById('admin-login-screen');
+        const adminApp = document.getElementById('admin-app');
+        const passwordInput = document.getElementById('password-input');
+        const loginBtn = document.getElementById('login-btn');
+        const passwordError = document.getElementById('password-error');
+        
+        const loadingStatus = document.getElementById('loading-status');
+        const resultsList = document.getElementById('results-list');
+        const resultsContent = document.getElementById('results-content');
+        const emptyMessage = document.getElementById('empty-message');
+        
+        // Tampilkan layar login admin secara default
+        if (adminLoginScreen) {
+            adminLoginScreen.classList.remove('hidden');
+            adminLoginScreen.classList.add('flex');
+        }
+        if (adminApp) adminApp.classList.add('hidden');
+        
+
+        function initializeAdmin() {
+            console.log("Admin mode initialized. Listening for results...");
+            listenToResults();
+        }
+
+        function listenToResults() {
+            if (!db) {
+                if (loadingStatus) loadingStatus.textContent = "Database tidak terinisialisasi.";
+                return;
+            }
+            const resultsCollection = collection(db, 'quiz_results');
+            const q = query(resultsCollection);
+
+            onSnapshot(q, (snapshot) => {
+                if (!loadingStatus || !resultsList) return; 
+                
+                loadingStatus.classList.add('hidden');
+                resultsList.classList.remove('hidden');
+                
+                let results = [];
+                snapshot.forEach(doc => results.push(doc.data()));
+
+                if (results.length === 0) {
+                    if (emptyMessage) emptyMessage.classList.remove('hidden');
+                    if (resultsContent) resultsContent.innerHTML = '';
+                    return;
+                }
+
+                if (emptyMessage) emptyMessage.classList.add('hidden');
+                results.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                renderResults(results);
+
+            }, (error) => {
+                console.error("Error listening to results:", error);
+                if (loadingStatus) {
+                    loadingStatus.classList.remove('hidden');
+                    loadingStatus.textContent = `Gagal mengambil data: ${error.message}. Pastikan Security Rules di Firebase Anda sudah benar.`;
+                    loadingStatus.classList.add('text-red-600');
+                }
+                if (resultsList) resultsList.classList.add('hidden');
+            });
+        }
+
+        function renderResults(results) {
+            if (!resultsContent) return;
+            resultsContent.innerHTML = '';
+            results.forEach(res => {
+                const name = res.name || 'Tanpa Nama';
+                const score = res.score !== undefined ? res.score.toFixed(0) : 'N/A';
+                const detail = `${res.correctAnswers || 0} / ${res.totalQuestions || 0} benar`;
+                let timestamp = 'N/A';
+                if (res.timestamp) {
+                    timestamp = res.timestamp.toDate().toLocaleString('id-ID', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                }
+                
+                const resultCard = `
+                    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-4 gap-2 items-center mb-3">
+                        <div class="font-semibold text-gray-800"><span class="md:hidden text-gray-500 font-medium">Nama: </span>${escapeHTML(name)}</div>
+                        <div class="text-lg"><span class="md:hidden text-gray-500 font-medium">Skor: </span><span class="font-bold text-blue-600">${score}</span></div>
+                        <div class="text-sm text-gray-600"><span class="md:hidden text-gray-500 font-medium">Detail: </span>${escapeHTML(detail)}</div>
+                        <div class="text-sm text-gray-500"><span class="md:hidden text-gray-500 font-medium">Waktu: </span>${escapeHTML(timestamp)}</div>
+                    </div>
+                `;
+                resultsContent.innerHTML += resultCard;
+            });
+        }
+
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/[&<>"']/g, m => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'}[m]));
+        }
+
+        // --- Event Listeners ---
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                const password = passwordInput.value;
+                if (password === 'admin123') { // Password baru
+                    if (passwordError) passwordError.classList.add('hidden');
+                    if (adminLoginScreen) adminLoginScreen.classList.add('hidden');
+                    if (adminApp) adminApp.classList.remove('hidden');
+                    initializeAdmin(); // Jalankan dasbor admin
+                } else {
+                    if (passwordError) passwordError.classList.remove('hidden');
+                    if (passwordInput) {
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                }
+            });
+
+            if (passwordInput) {
+                passwordInput.addEventListener('keyup', (event) => {
+                    if (event.key === 'Enter') {
+                        loginBtn.click();
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
