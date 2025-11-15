@@ -3,13 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dasbor Admin - Hasil Tes</title>
+    <title>Tes Karyawan - BPR Indra Arta</title>
     <!-- 1. Muat Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+        }
+        /* Style untuk tombol pilihan kuis */
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .option-btn.correct {
+            border-color: #22c55e;
+            background-color: #f0fdf4;
+            color: #166534;
+        }
+        .option-btn.wrong {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            color: #991b1b;
+        }
+        .option-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+        /* Simple spinner for start button */
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-left-color: #fff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -19,50 +53,88 @@
     <div id="app-container" class="w-full">
 
         <!-- ============================================= -->
-        <!-- BAGIAN ADMIN LOGIN                            -->
+        <!-- BAGIAN APLIKASI KUIS (PESERTA)                -->
         <!-- ============================================= -->
-        <div id="admin-login-screen" class="min-h-screen hidden flex items-center justify-center p-4">
-            <div class="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8 space-y-6">
-                <h2 class="text-2xl font-bold text-center text-gray-800">Login Admin</h2>
-                <div>
-                    <label for="password-input" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password-input" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p id="password-error" class="text-red-500 text-sm mt-2 hidden">Password salah. Silakan coba lagi.</p>
+        <div id="quiz-app" class="flex items-center justify-center min-h-screen p-4">
+            <div id="app" class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden">
+                
+                <!-- Header Aplikasi -->
+                <div class="p-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white text-center">
+                    <h1 class="text-2xl font-bold">Tes Penerimaan Karyawan</h1>
+                    <p class="text-lg opacity-90">BPR Indra Arta</p>
                 </div>
-                <button id="login-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">
-                    Masuk
-                </button>
+
+                <!-- 1. Layar Mulai (Start Screen) -->
+                <div id="start-screen" class="p-8 space-y-6">
+                    <h2 class="text-xl font-semibold text-gray-800">Selamat Datang, Calon Karyawan!</h2>
+                    <p class="text-gray-600">Tes ini terdiri dari 10 pertanyaan pilihan ganda. Setiap soal memiliki waktu 3 menit. Jika waktu habis, jawaban dianggap salah. Kerjakanlah dengan jujur dan teliti.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name-input" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap Anda</label>
+                            <input type="text" id="name-input" placeholder="Masukkan nama lengkap Anda..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <p id="name-error" class="text-red-500 text-sm mt-1 hidden">Nama tidak boleh kosong.</p>
+                        </div>
+                    </div>
+                    
+                    <button id="start-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center space-x-2 disabled:opacity-75">
+                        <span id="start-btn-text">Mulai Tes</span>
+                        <div id="start-spinner" class="spinner hidden"></div>
+                    </button>
+                    <p id="load-error" class="text-red-500 text-sm text-center mt-2 hidden">Gagal memuat soal. Pastikan file 'soal.json' ada di folder yang sama.</p>
+                    
+                    <!-- Link Admin sudah dihapus dari sini -->
+                </div>
+
+                <!-- 2. Layar Kuis (Quiz Screen) -->
+                <div id="quiz-screen" class="p-8 hidden">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-blue-700">Pertanyaan</span>
+                            <span id="question-counter" class="text-sm font-medium text-gray-500">1 / 10</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <h2 id="question-text" class="text-xl font-semibold text-gray-800 mb-6" style="min-height: 50px;">...</h2>
+                    <div class="flex justify-center mb-6">
+                        <span id="timer-display" class="text-xl font-bold text-red-600 font-mono bg-red-50 border-2 border-red-200 rounded-lg px-6 py-2 shadow-inner">
+                            Sisa Waktu: 3:00
+                        </span>
+                    </div>
+                    <div id="options-container" class="space-y-3 mb-8"></div>
+                    <div class="flex justify-end">
+                        <button id="next-btn" class="bg-gray-400 text-white font-semibold py-2 px-8 rounded-lg transition duration-300 cursor-not-allowed" disabled>
+                            Lanjut
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Layar Hasil (Result Screen) -->
+                <div id="result-screen" class="p-8 text-center hidden space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Tes Selesai!</h2>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg text-left">
+                        <p class="text-gray-700">Terima kasih, <strong id="result-name"></strong>, telah menyelesaikan tes.</p>
+                        <p class="text-lg text-gray-800 mt-2">Skor Anda:</p>
+                        <p id="score-text" class="text-5xl font-extrabold text-blue-600 my-2">100</p>
+                        <p id="score-detail" class="text-gray-600">Anda menjawab 10 dari 10 soal dengan benar.</p>
+                    </div>
+                    <div class="py-4 space-y-3">
+                        <div id="loading-spinner" class="flex justify-center items-center space-x-2">
+                            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-gray-600 font-medium">Menyimpan hasil Anda...</span>
+                        </div>
+                        <p id="result-text" class="text-lg font-semibold hidden"></p>
+                    </div>
+                    <p class="text-gray-500 text-sm max-w-md mx-auto">Anda bisa menutup halaman ini.</p>
+                </div>
             </div>
         </div>
-
-        <!-- ============================================= -->
-        <!-- BAGIAN ADMIN (DASBOR)                         -->
-        <!-- ============================================= -->
-        <div id="admin-app" class="min-h-screen hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 shadow-md">
-                <h1 class="text-3xl font-bold container mx-auto max-w-5xl">Dasbor Hasil Tes Karyawan</h1>
-                <p class="container mx-auto max-w-5xl opacity-90">BPR Indra Arta</p>
-            </div>
-
-            <div class="container mx-auto max-w-5xl p-6">
-                <div id="loading-status" class="text-center p-10 bg-white rounded-lg shadow">
-                    <p class="text-lg font-medium text-gray-600">Menghubungkan ke database...</p>
-                </div>
-                <div id="results-list" class="hidden space-y-4">
-                    <div class="hidden md:grid grid-cols-4 gap-4 font-semibold text-gray-600 bg-gray-50 p-4 rounded-lg">
-                        <div>Nama Peserta</div>
-                        <div>Skor</div>
-                        <div>Detail Jawaban</div>
-                        <div>Waktu Pengerjaan</div>
-                    </div>
-                    <div id="results-content"></div>
-                    <div id="empty-message" class="hidden text-center p-10 bg-white rounded-lg shadow">
-                        <p class="text-lg text-gray-500">Belum ada hasil tes yang masuk.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
     </div>
 
     <!-- Script akan diubah menjadi module untuk Firebase -->
@@ -70,10 +142,10 @@
         // --- 0. IMPORT FIREBASE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, setLogLevel, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Inisialisasi Firebase ---
-        // INI ADALAH KONFIGURASI YANG SAMA DENGAN index.html
+        // INI ADALAH KONFIGURASI DARI PROYEK FIREBASE ANDA
         const firebaseConfig = {
           apiKey: "AIzaSyDudaHFKePqDSV7ALhdJ04vFxxPQV2wX4g",
           authDomain: "ujianonline-d7c7c.firebaseapp.com",
@@ -84,7 +156,7 @@
           measurementId: "G-93X84KKG5G"
         };
         
-        let db, auth;
+        let db, auth, userId;
         
         try {
             // Inisialisasi Firebase dengan config Anda
@@ -95,143 +167,295 @@
             
             // Login secara anonim (wajib untuk bisa akses database)
             await signInAnonymously(auth);
-            console.log("Firebase auth successful (GitHub Mode)");
+            
+            userId = auth.currentUser?.uid || crypto.randomUUID();
+            console.log("Firebase auth successful (GitHub Mode), UserID:", userId);
         } catch (error) {
             console.error("Firebase auth failed:", error);
+            // Tampilkan error di dalam container aplikasi agar tidak merusak layout
             const appContainer = document.getElementById('app-container');
             const errorMsg = `<div class="p-8 text-center text-red-600">Gagal terhubung ke Firebase. Pastikan konfigurasi Firebase Anda benar dan Anda sudah mengaktifkan 'Anonymous Sign-In' di dasbor Firebase. Error: ${error.message}</div>`;
+            
             if (appContainer) {
                 appContainer.innerHTML = errorMsg;
             } else {
+                // Fallback jika container tidak ditemukan
                 document.body.innerHTML = errorMsg;
             }
+            userId = crypto.randomUUID();
         }
+
+        // --- Variabel Global Kuis ---
+        let questions = []; // Akan diisi dari soal.json
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userName = "";
+        let selectedAnswer = null;
+        let timerInterval;
+        let remainingTime;
 
         // ==========================================
-        // KODE UNTUK ADMIN
+        // KODE UNTUK KUIS (PESERTA)
         // ==========================================
-        
-        // Referensi DOM Admin
-        const adminLoginScreen = document.getElementById('admin-login-screen');
-        const adminApp = document.getElementById('admin-app');
-        const passwordInput = document.getElementById('password-input');
-        const loginBtn = document.getElementById('login-btn');
-        const passwordError = document.getElementById('password-error');
-        
-        const loadingStatus = document.getElementById('loading-status');
-        const resultsList = document.getElementById('results-list');
-        const resultsContent = document.getElementById('results-content');
-        const emptyMessage = document.getElementById('empty-message');
-        
-        // Tampilkan layar login admin secara default
-        if (adminLoginScreen) {
-            adminLoginScreen.classList.remove('hidden');
-            adminLoginScreen.classList.add('flex');
-        }
-        if (adminApp) adminApp.classList.add('hidden');
-        
 
-        function initializeAdmin() {
-            console.log("Admin mode initialized. Listening for results...");
-            listenToResults();
+        // Referensi DOM Kuis
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const nameInput = document.getElementById('name-input');
+        const nameError = document.getElementById('name-error');
+        const startBtn = document.getElementById('start-btn');
+        const startBtnText = document.getElementById('start-btn-text');
+        const startSpinner = document.getElementById('start-spinner');
+        const loadError = document.getElementById('load-error');
+        const questionCounter = document.getElementById('question-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const timerDisplay = document.getElementById('timer-display');
+        const resultName = document.getElementById('result-name');
+        const scoreText = document.getElementById('score-text');
+        const scoreDetail = document.getElementById('score-detail');
+        const resultText = document.getElementById('result-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // --- FUNGSI BARU: Memuat soal dari JSON ---
+        async function loadQuestions() {
+            if (startBtn) startBtn.disabled = true;
+            if (startSpinner) startSpinner.classList.remove('hidden');
+            if (startBtnText) startBtnText.textContent = 'Memuat Soal...';
+            if (loadError) loadError.classList.add('hidden');
+
+            try {
+                // Pastikan soal.json ada di folder yg sama dgn index.html
+                const response = await fetch('soal.json'); 
+                if (!response.ok) {
+                    throw new Error(`Gagal memuat: ${response.statusText}`);
+                }
+                questions = await response.json();
+                
+                if (questions.length === 0) {
+                    throw new Error("File soal kosong.");
+                }
+
+                // Soal berhasil dimuat, mulai kuis
+                startQuiz();
+
+            } catch (error) {
+                console.error("Gagal memuat soal:", error);
+                if (loadError) loadError.classList.remove('hidden');
+                if (startBtn) startBtn.disabled = false;
+                if (startSpinner) startSpinner.classList.add('hidden');
+                if (startBtnText) startBtnText.textContent = 'Mulai Tes';
+            }
         }
 
-        function listenToResults() {
-            if (!db) {
-                if (loadingStatus) loadingStatus.textContent = "Database tidak terinisialisasi.";
+        function startQuiz() {
+            userName = nameInput.value.trim();
+            if (userName === "") {
+                if (nameError) nameError.classList.remove('hidden');
+                // Kembalikan tombol start ke state normal jika nama kosong
+                if (startBtn) startBtn.disabled = false;
+                if (startSpinner) startSpinner.classList.add('hidden');
+                if (startBtnText) startBtnText.textContent = 'Mulai Tes';
                 return;
             }
-            const resultsCollection = collection(db, 'quiz_results');
-            const q = query(resultsCollection);
-
-            onSnapshot(q, (snapshot) => {
-                if (!loadingStatus || !resultsList) return; 
-                
-                loadingStatus.classList.add('hidden');
-                resultsList.classList.remove('hidden');
-                
-                let results = [];
-                snapshot.forEach(doc => results.push(doc.data()));
-
-                if (results.length === 0) {
-                    if (emptyMessage) emptyMessage.classList.remove('hidden');
-                    if (resultsContent) resultsContent.innerHTML = '';
-                    return;
-                }
-
-                if (emptyMessage) emptyMessage.classList.add('hidden');
-                results.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-                renderResults(results);
-
-            }, (error) => {
-                console.error("Error listening to results:", error);
-                if (loadingStatus) {
-                    loadingStatus.classList.remove('hidden');
-                    loadingStatus.textContent = `Gagal mengambil data: ${error.message}. Pastikan Security Rules di Firebase Anda sudah benar.`;
-                    loadingStatus.classList.add('text-red-600');
-                }
-                if (resultsList) resultsList.classList.add('hidden');
-            });
+            if (nameError) nameError.classList.add('hidden');
+            if (startScreen) startScreen.classList.add('hidden');
+            if (quizScreen) quizScreen.classList.remove('hidden');
+            showQuestion();
         }
 
-        function renderResults(results) {
-            if (!resultsContent) return;
-            resultsContent.innerHTML = '';
-            results.forEach(res => {
-                const name = res.name || 'Tanpa Nama';
-                const score = res.score !== undefined ? res.score.toFixed(0) : 'N/A';
-                const detail = `${res.correctAnswers || 0} / ${res.totalQuestions || 0} benar`;
-                let timestamp = 'N/A';
-                if (res.timestamp) {
-                    timestamp = res.timestamp.toDate().toLocaleString('id-ID', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                }
-                
-                const resultCard = `
-                    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-4 gap-2 items-center mb-3">
-                        <div class="font-semibold text-gray-800"><span class="md:hidden text-gray-500 font-medium">Nama: </span>${escapeHTML(name)}</div>
-                        <div class="text-lg"><span class="md:hidden text-gray-500 font-medium">Skor: </span><span class="font-bold text-blue-600">${score}</span></div>
-                        <div class="text-sm text-gray-600"><span class="md:hidden text-gray-500 font-medium">Detail: </span>${escapeHTML(detail)}</div>
-                        <div class="text-sm text-gray-500"><span class="md:hidden text-gray-500 font-medium">Waktu: </span>${escapeHTML(timestamp)}</div>
-                    </div>
-                `;
-                resultsContent.innerHTML += resultCard;
-            });
-        }
+        function showQuestion() {
+            clearInterval(timerInterval);
+            selectedAnswer = null;
+            if (optionsContainer) optionsContainer.innerHTML = '';
+            if (nextBtn) {
+                nextBtn.disabled = true;
+                nextBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                nextBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            }
+            if (timerDisplay) timerDisplay.classList.remove('animate-pulse', 'text-gray-400'); 
 
-        function escapeHTML(str) {
-            if (typeof str !== 'string') return '';
-            return str.replace(/[&<>"']/g, m => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'}[m]));
-        }
+            const question = questions[currentQuestionIndex];
+            if (questionText) questionText.textContent = question.question;
+            if (questionCounter) questionCounter.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+            if (progressBar) progressBar.style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
 
-        // --- Event Listeners ---
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                const password = passwordInput.value;
-                if (password === 'admin123') { // Password baru
-                    if (passwordError) passwordError.classList.add('hidden');
-                    if (adminLoginScreen) adminLoginScreen.classList.add('hidden');
-                    if (adminApp) adminApp.classList.remove('hidden');
-                    initializeAdmin(); // Jalankan dasbor admin
-                } else {
-                    if (passwordError) passwordError.classList.remove('hidden');
-                    if (passwordInput) {
-                        passwordInput.value = '';
-                        passwordInput.focus();
-                    }
-                }
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-btn', 'w-full', 'p-4', 'border-2', 'border-gray-300', 'rounded-lg', 'text-left', 'font-medium', 'text-gray-700');
+                button.onclick = () => selectAnswer(option, button);
+                if (optionsContainer) optionsContainer.appendChild(button);
             });
 
-            if (passwordInput) {
-                passwordInput.addEventListener('keyup', (event) => {
-                    if (event.key === 'Enter') {
-                        loginBtn.click();
+            remainingTime = 180; // 3 menit
+            updateTimerDisplay();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            remainingTime--;
+            updateTimerDisplay();
+            if (remainingTime <= 0) {
+                clearInterval(timerInterval);
+                handleTimeUp();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            if (timerDisplay) timerDisplay.textContent = `Sisa Waktu: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            if (remainingTime <= 10 && remainingTime > 0) {
+                if (timerDisplay) timerDisplay.classList.add('animate-pulse');
+            }
+        }
+
+        function handleTimeUp() {
+            selectedAnswer = "WAKTU HABIS";
+            if (optionsContainer) {
+                Array.from(optionsContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.textContent === questions[currentQuestionIndex].answer) {
+                        btn.classList.add('correct');
                     }
                 });
             }
+            if (timerDisplay) {
+                timerDisplay.textContent = "Waktu Habis!";
+                timerDisplay.classList.add('text-gray-400');
+                timerDisplay.classList.remove('animate-pulse');
+            }
+            
+            // Tunda ke pertanyaan berikutnya selama 2 detik
+            setTimeout(() => {
+                nextQuestion(); 
+            }, 2000); 
         }
+
+        function selectAnswer(option, button) {
+            if (selectedAnswer) return;
+            clearInterval(timerInterval);
+            if (timerDisplay) timerDisplay.classList.remove('animate-pulse');
+            selectedAnswer = option;
+            const correct = (option === questions[currentQuestionIndex].answer);
+
+            if (optionsContainer) {
+                Array.from(optionsContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (!correct && btn.textContent === questions[currentQuestionIndex].answer) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+
+            if (correct) {
+                score++;
+                button.classList.add('correct');
+            } else {
+                button.classList.add('wrong');
+            }
+
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                nextBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }
+        }
+
+        function nextQuestion() {
+            // Cek jika waktu habis, tidak perlu menekan tombol next
+            if (selectedAnswer === "WAKTU HABIS") {
+                // do nothing, handleTimeUp already triggered nextQuestion
+            } else if (!selectedAnswer) {
+                // Jika tombol next ditekan tanpa memilih (seharusnya tidak terjadi, tapi sbg penjaga)
+                return;
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        async function saveResultToFirestore(finalGrade) {
+            if (!db) {
+                console.error("Firestore DB not initialized. Cannot save score.");
+                if (resultText) {
+                    resultText.textContent = "Gagal terhubung ke database. Coba muat ulang halaman.";
+                    resultText.classList.remove('hidden', 'text-green-600');
+                    resultText.classList.add('text-red-600');
+                }
+                if (loadingSpinner) loadingSpinner.classList.add('hidden');
+                return;
+            }
+            try {
+                // Path koleksi disederhanakan untuk GitHub (sesuai Security Rules)
+                const resultsCollection = collection(db, 'quiz_results');
+                
+                const resultData = {
+                    name: userName,
+                    score: finalGrade,
+                    correctAnswers: score,
+                    totalQuestions: questions.length,
+                    timestamp: serverTimestamp()
+                };
+
+                await addDoc(resultsCollection, resultData);
+                
+                console.log("Result saved to Firestore (GitHub Mode).");
+                if (loadingSpinner) loadingSpinner.classList.add('hidden');
+                if (resultText) {
+                    resultText.textContent = "Hasil Anda telah berhasil disimpan secara otomatis. Terima kasih.";
+                    resultText.classList.remove('hidden');
+                    resultText.classList.add('text-green-600');
+                }
+            } catch (error) {
+                console.error("Error saving result to Firestore:", error);
+                if (loadingSpinner) loadingSpinner.classList.add('hidden');
+                if (resultText) {
+                    resultText.textContent = `Terjadi error saat menyimpan nilai: ${error.message}. Pastikan Security Rules Anda benar.`;
+                    resultText.classList.remove('hidden');
+                    resultText.classList.add('text-red-600');
+                }
+            }
+        }
+
+        function showResult() {
+            clearInterval(timerInterval);
+            if (quizScreen) quizScreen.classList.add('hidden');
+            if (resultScreen) resultScreen.classList.remove('hidden');
+            const finalGrade = (score / questions.length) * 100;
+            if (resultName) resultName.textContent = userName;
+            if (scoreText) scoreText.textContent = `${finalGrade.toFixed(0)}`;
+            if (scoreDetail) scoreDetail.textContent = `Anda menjawab ${score} dari ${questions.length} soal dengan benar.`;
+            saveResultToFirestore(finalGrade);
+        }
+
+        // --- Event Listeners ---
+        // Hanya tambahkan listener jika elemennya ada (tidak error saat init)
+        
+        // Listener untuk Kuis
+        if (startBtn) {
+            // Ganti listener tombol Start untuk memuat soal dulu
+            startBtn.addEventListener('click', () => {
+                userName = nameInput.value.trim();
+                if (userName === "") {
+                    if (nameError) nameError.classList.remove('hidden');
+                    return;
+                }
+                if (nameError) nameError.classList.add('hidden');
+                // Panggil fungsi loadQuestions, bukan startQuiz langsung
+                loadQuestions(); 
+            });
+            if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+        }
+
     </script>
 </body>
 </html>
