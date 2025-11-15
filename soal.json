@@ -1,0 +1,52 @@
+[
+    { 
+        "question": "Apa kepanjangan dari BPR?", 
+        "options": ["Bank Pengkreditan Rakyat", "Bank Perkreditan Rakyat", "Badan Perkreditan Rakyat", "Bank Perekonomian Rakyat"], 
+        "answer": "Bank Perkreditan Rakyat" 
+    },
+    { 
+        "question": "Manakah yang BUKAN merupakan fungsi utama BPR?", 
+        "options": ["Menghimpun dana dari masyarakat", "Menyalurkan dana ke masyarakat", "Menerbitkan Kartu Kredit", "Memberikan kredit usaha kecil"], 
+        "answer": "Menerbitkan Kartu Kredit" 
+    },
+    { 
+        "question": "Lembaga yang mengawasi BPR dan bank lainnya di Indonesia adalah...", 
+        "options": ["Bank Indonesia (BI)", "Otoritas Jasa Keuangan (OJK)", "Lembaga Penjamin Simpanan (LPS)", "Kementerian Keuangan"], 
+        "answer": "Otoritas Jasa Keuangan (OJK)" 
+    },
+    { 
+        "question": "Produk simpanan di BPR yang dijamin oleh LPS adalah...", 
+        "options": ["Tabungan", "Giro", "Saham", "Semua salah"], 
+        "answer": "Tabungan" 
+    },
+    { 
+        "question": "Sikap yang paling penting saat melayani nasabah yang sedang komplain adalah...", 
+        "options": ["Ikut marah agar nasabah takut", "Tetap tenang, dengarkan, dan berikan solusi", "Menyalahkan nasabah atas masalahnya", "Mengabaikannya dan melayani nasabah lain"], 
+        "answer": "Tetap tenang, dengarkan, dan berikan solusi" 
+    },
+    { 
+        "question": "Apa yang dimaksud dengan 'Kredit'?", 
+        "options": ["Uang yang disimpan di bank", "Pinjaman uang yang harus dikembalikan", "Jasa pengiriman uang", "Mata uang digital"], 
+        "answer": "Pinjaman uang yang harus dikembalikan" 
+    },
+    { 
+        "question": "Prinsip 5C dalam analisis kredit adalah Character, Capacity, Capital, Collateral, dan...", 
+        "options": ["Creativity", "Connection", "Condition", "Community"], 
+        "answer": "Condition" 
+    },
+    { 
+        "question": "Menjaga kerahasiaan data nasabah adalah...", 
+        "options": ["Pilihan pribadi karyawan", "Kewajiban hukum dan etika perbankan", "Hanya berlaku untuk nasabah kaya", "Tidak terlalu penting"], 
+        "answer": "Kewajiban hukum dan etika perbankan" 
+    },
+    { 
+        "question": "Jika seorang teman meminta Anda membocorkan saldo rekening nasabah lain, apa yang Anda lakukan?", 
+        "options": ["Memberitahunya karena dia teman", "Memintanya bayaran untuk informasi itu", "Menolak dengan tegas dan sopan", "Melaporkan teman tersebut ke polisi"], 
+        "answer": "Menolak dengan tegas dan sopan" 
+    },
+    { 
+        "question": "Hitung bunga sederhana: Pinjaman Rp 10.000.000 dengan bunga 10% per tahun. Berapa total bunga setelah 1 tahun?", 
+        "options": ["Rp 100.000", "Rp 1.000.000", "Rp 10.000", "Rp 500.000"], 
+        "answer": "Rp 1.000.000" 
+    }
+]
