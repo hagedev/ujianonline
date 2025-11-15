@@ -81,7 +81,7 @@
                         <span id="start-btn-text">Mulai Tes</span>
                         <div id="start-spinner" class="spinner hidden"></div>
                     </button>
-                    <p id="load-error" class="text-red-500 text-sm text-center mt-2 hidden">Gagal memuat soal. Coba muat ulang halaman.</p>
+                    <p id="load-error" class="text-red-500 text-sm text-center mt-2 hidden">Gagal memuat soal. Pastikan file 'soal.json' ada di folder yang sama.</p>
 
                     <div class="text-center pt-2">
                         <!-- Link Admin di-bind dengan JavaScript -->
@@ -141,7 +141,7 @@
         </div>
 
         <!-- ============================================= -->
-        <!-- BAGIAN ADMIN LOGIN (BARU)                     -->
+        <!-- BAGIAN ADMIN LOGIN                            -->
         <!-- ============================================= -->
         <div id="admin-login-screen" class="min-h-screen hidden flex items-center justify-center p-4">
             <div class="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8 space-y-6">
@@ -191,32 +191,39 @@
     <script type="module">
         // --- 0. IMPORT FIREBASE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Inisialisasi Firebase ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // Gunakan AppID dinamis agar admin & kuis berada di 'folder' yg sama
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-quiz-app'; 
+        // INI ADALAH KONFIGURASI DARI PROYEK FIREBASE ANDA
+        const firebaseConfig = {
+          apiKey: "AIzaSyDudaHFKePqDSV7ALhdJ04vFxxPQV2wX4g",
+          authDomain: "ujianonline-d7c7c.firebaseapp.com",
+          projectId: "ujianonline-d7c7c",
+          storageBucket: "ujianonline-d7c7c.firebasestorage.app",
+          messagingSenderId: "809335532472",
+          appId: "1:809335532472:web:20b34ac5d4b81f4f84fd4d",
+          measurementId: "G-93X84KKG5G"
+        };
         
         let db, auth, userId;
         
         try {
+            // Inisialisasi Firebase dengan config Anda
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             setLogLevel('Debug'); 
-
-            if (typeof __initial_auth_token !== 'undefined') {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
+            
+            // Login secara anonim (wajib untuk bisa akses database)
+            await signInAnonymously(auth);
+            
             userId = auth.currentUser?.uid || crypto.randomUUID();
-            console.log("Firebase auth successful, UserID:", userId);
-            console.log("Using AppID:", appId);
+            console.log("Firebase auth successful (GitHub Mode), UserID:", userId);
         } catch (error) {
             console.error("Firebase auth failed:", error);
+            // Tampilkan error ke pengguna jika gagal inisialisasi
+            document.body.innerHTML = `<div class="p-8 text-center text-red-600">Gagal terhubung ke Firebase. Pastikan konfigurasi Firebase Anda benar dan Anda sudah mengatur Security Rules. Error: ${error.message}</div>`;
             userId = crypto.randomUUID();
         }
 
@@ -282,10 +289,9 @@
                 loadingStatus.textContent = "Database tidak terinisialisasi.";
                 return;
             }
-            // Path koleksi HARUS SAMA PERSIS dengan saat menyimpan
-            const resultsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+            // Path koleksi disederhanakan untuk GitHub (sesuai Security Rules)
+            const resultsCollection = collection(db, 'quiz_results');
             
-            // Buat query untuk mengurutkan (jika diperlukan, tapi kita urutkan di client)
             const q = query(resultsCollection);
 
             onSnapshot(q, (snapshot) => {
@@ -309,7 +315,7 @@
             }, (error) => {
                 console.error("Error listening to results:", error);
                 loadingStatus.classList.remove('hidden');
-                loadingStatus.textContent = `Gagal mengambil data: ${error.message}`;
+                loadingStatus.textContent = `Gagal mengambil data: ${error.message}. Pastikan Security Rules di Firebase Anda sudah benar.`;
                 loadingStatus.classList.add('text-red-600');
                 resultsList.classList.add('hidden');
             });
@@ -535,8 +541,8 @@
                 return;
             }
             try {
-                // Path koleksi: /artifacts/{appId}/public/data/quiz_results
-                const resultsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                // Path koleksi disederhanakan untuk GitHub (sesuai Security Rules)
+                const resultsCollection = collection(db, 'quiz_results');
                 
                 const resultData = {
                     name: userName,
@@ -548,7 +554,7 @@
 
                 await addDoc(resultsCollection, resultData);
                 
-                console.log("Result saved to Firestore with AppID:", appId);
+                console.log("Result saved to Firestore (GitHub Mode).");
                 loadingSpinner.classList.add('hidden');
                 resultText.textContent = "Hasil Anda telah berhasil disimpan secara otomatis. Terima kasih.";
                 resultText.classList.remove('hidden');
@@ -556,7 +562,7 @@
             } catch (error) {
                 console.error("Error saving result to Firestore:", error);
                 loadingSpinner.classList.add('hidden');
-                resultText.textContent = `Terjadi error saat menyimpan nilai: ${error.message}`;
+                resultText.textContent = `Terjadi error saat menyimpan nilai: ${error.message}. Pastikan Security Rules Anda benar.`;
                 resultText.classList.remove('hidden');
                 resultText.classList.add('text-red-600');
             }
