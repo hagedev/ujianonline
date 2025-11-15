@@ -11,6 +11,95 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Style untuk cetak */
+        @media print {
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            /* Sembunyikan elemen yang tidak perlu dicetak */
+            #admin-login-screen, #admin-app > div:first-child {
+                display: none !important;
+            }
+            /* Tampilkan area hasil cetak */
+            #admin-app {
+                display: block !important;
+                min-height: 0 !important;
+                background: #fff !important;
+            }
+            #results-list {
+                display: block !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin-top: 20px !important;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+                padding-top: 20px;
+                border-bottom: 2px solid #ccc;
+                padding-bottom: 10px;
+            }
+            .print-header h1 {
+                font-size: 24px;
+                font-weight: bold;
+                color: #000;
+            }
+            .print-header p {
+                font-size: 16px;
+                color: #555;
+            }
+            .table-print-layout {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                display: table !important;
+            }
+            .table-print-layout thead {
+                display: table-header-group !important;
+                background-color: #f3f4f6 !important;
+            }
+            .table-print-layout th, .table-print-layout td {
+                display: table-cell !important;
+                border: 1px solid #ddd !important;
+                padding: 8px !important;
+                font-size: 12px !important;
+                text-align: left !important;
+                color: #000 !important;
+            }
+            .table-print-layout th {
+                font-weight: bold !important;
+            }
+            .table-print-layout tbody {
+                display: table-row-group !important;
+            }
+            .table-print-layout tr {
+                display: table-row !important;
+                page-break-inside: avoid !important;
+            }
+            /* Sembunyikan header tabel di layar */
+            .header-grid-screen {
+                display: none !important;
+            }
+            /* Sembunyikan layout card di cetak */
+            .result-card-screen {
+                display: none !important;
+            }
+            /* Atur ulang agar tidak ada grid di cetak */
+            #results-content {
+                display: table-row-group !important;
+            }
+        }
+        /* Pastikan print-header tersembunyi di layar */
+        .print-header {
+            display: none;
+        }
+        /* Pastikan layout tabel cetak tersembunyi di layar */
+        .table-print-layout {
+            display: none;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -40,8 +129,22 @@
         <!-- ============================================= -->
         <div id="admin-app" class="min-h-screen hidden">
             <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 shadow-md">
-                <h1 class="text-3xl font-bold container mx-auto max-w-5xl">Dasbor Hasil Tes Karyawan</h1>
-                <p class="container mx-auto max-w-5xl opacity-90">BPR Indra Arta</p>
+                <div class="container mx-auto max-w-5xl flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold">Dasbor Hasil Tes Karyawan</h1>
+                        <p class="opacity-90">BPR Indra Arta</p>
+                    </div>
+                    <!-- Tombol Cetak Baru -->
+                    <button id="print-btn" class="bg-white text-blue-700 font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-gray-100 transition duration-300">
+                        Cetak Laporan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Header Cetak (Hanya terlihat saat mencetak) -->
+            <div class="print-header">
+                <h1>Laporan Hasil Tes Karyawan</h1>
+                <p>BPR Indra Arta</p>
             </div>
 
             <div class="container mx-auto max-w-5xl p-6">
@@ -49,13 +152,31 @@
                     <p class="text-lg font-medium text-gray-600">Menghubungkan ke database...</p>
                 </div>
                 <div id="results-list" class="hidden space-y-4">
-                    <div class="hidden md:grid grid-cols-4 gap-4 font-semibold text-gray-600 bg-gray-50 p-4 rounded-lg">
+                    <!-- Header Tabel untuk Layar -->
+                    <div class="hidden md:grid grid-cols-5 gap-4 font-semibold text-gray-600 bg-gray-50 p-4 rounded-lg header-grid-screen">
+                        <div>Peringkat</div>
                         <div>Nama Peserta</div>
                         <div>Skor</div>
                         <div>Detail Jawaban</div>
                         <div>Waktu Pengerjaan</div>
                     </div>
-                    <div id="results-content"></div>
+                    <!-- Konten Hasil untuk Layar -->
+                    <div id="results-content-screen"></div>
+
+                    <!-- Tabel Duplikat untuk Cetak (tersembunyi di layar) -->
+                    <table class="table-print-layout w-full text-left">
+                        <thead>
+                            <tr>
+                                <th>Peringkat</th>
+                                <th>Nama Peserta</th>
+                                <th>Skor</th>
+                                <th>Detail Jawaban</th>
+                                <th>Waktu Pengerjaan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-content-print"></tbody>
+                    </table>
+
                     <div id="empty-message" class="hidden text-center p-10 bg-white rounded-lg shadow">
                         <p class="text-lg text-gray-500">Belum ada hasil tes yang masuk.</p>
                     </div>
@@ -73,7 +194,6 @@
         import { getFirestore, collection, setLogLevel, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Inisialisasi Firebase ---
-        // INI ADALAH KONFIGURASI YANG SAMA DENGAN index.html
         const firebaseConfig = {
           apiKey: "AIzaSyDudaHFKePqDSV7ALhdJ04vFxxPQV2wX4g",
           authDomain: "ujianonline-d7c7c.firebaseapp.com",
@@ -87,13 +207,10 @@
         let db, auth;
         
         try {
-            // Inisialisasi Firebase dengan config Anda
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             setLogLevel('Debug'); 
-            
-            // Login secara anonim (wajib untuk bisa akses database)
             await signInAnonymously(auth);
             console.log("Firebase auth successful (GitHub Mode)");
         } catch (error) {
@@ -111,16 +228,17 @@
         // KODE UNTUK ADMIN
         // ==========================================
         
-        // Referensi DOM Admin
         const adminLoginScreen = document.getElementById('admin-login-screen');
         const adminApp = document.getElementById('admin-app');
         const passwordInput = document.getElementById('password-input');
         const loginBtn = document.getElementById('login-btn');
         const passwordError = document.getElementById('password-error');
+        const printBtn = document.getElementById('print-btn');
         
         const loadingStatus = document.getElementById('loading-status');
         const resultsList = document.getElementById('results-list');
-        const resultsContent = document.getElementById('results-content');
+        const resultsContentScreen = document.getElementById('results-content-screen');
+        const resultsContentPrint = document.getElementById('results-content-print');
         const emptyMessage = document.getElementById('empty-message');
         
         // Tampilkan layar login admin secara default
@@ -155,12 +273,23 @@
 
                 if (results.length === 0) {
                     if (emptyMessage) emptyMessage.classList.remove('hidden');
-                    if (resultsContent) resultsContent.innerHTML = '';
+                    if (resultsContentScreen) resultsContentScreen.innerHTML = '';
+                    if (resultsContentPrint) resultsContentPrint.innerHTML = '';
                     return;
                 }
 
                 if (emptyMessage) emptyMessage.classList.add('hidden');
-                results.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                
+                // --- FUNGSI RANKING ---
+                // Urutkan berdasarkan skor (tertinggi ke terendah)
+                // Jika skor sama, urutkan berdasarkan waktu (terbaru ke terlama)
+                results.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return (b.score || 0) - (a.score || 0); // Skor tertinggi dulu
+                    }
+                    return (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0); // Jika skor sama, yg terbaru
+                });
+
                 renderResults(results);
 
             }, (error) => {
@@ -175,9 +304,12 @@
         }
 
         function renderResults(results) {
-            if (!resultsContent) return;
-            resultsContent.innerHTML = '';
-            results.forEach(res => {
+            if (!resultsContentScreen || !resultsContentPrint) return;
+            resultsContentScreen.innerHTML = '';
+            resultsContentPrint.innerHTML = '';
+
+            results.forEach((res, index) => {
+                const rank = index + 1;
                 const name = res.name || 'Tanpa Nama';
                 const score = res.score !== undefined ? res.score.toFixed(0) : 'N/A';
                 const detail = `${res.correctAnswers || 0} / ${res.totalQuestions || 0} benar`;
@@ -189,15 +321,29 @@
                     });
                 }
                 
-                const resultCard = `
-                    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-4 gap-2 items-center mb-3">
+                // 1. Render untuk Layar (Screen)
+                const resultCardScreen = `
+                    <div class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-5 gap-2 items-center mb-3 result-card-screen">
+                        <div class="text-lg font-bold text-blue-600"><span class="md:hidden text-gray-500 font-medium">Rank: </span>#${rank}</div>
                         <div class="font-semibold text-gray-800"><span class="md:hidden text-gray-500 font-medium">Nama: </span>${escapeHTML(name)}</div>
-                        <div class="text-lg"><span class="md:hidden text-gray-500 font-medium">Skor: </span><span class="font-bold text-blue-600">${score}</span></div>
+                        <div class="text-xl"><span class="md:hidden text-gray-500 font-medium">Skor: </span><span class="font-bold text-blue-600">${score}</span></div>
                         <div class="text-sm text-gray-600"><span class="md:hidden text-gray-500 font-medium">Detail: </span>${escapeHTML(detail)}</div>
                         <div class="text-sm text-gray-500"><span class="md:hidden text-gray-500 font-medium">Waktu: </span>${escapeHTML(timestamp)}</div>
                     </div>
                 `;
-                resultsContent.innerHTML += resultCard;
+                resultsContentScreen.innerHTML += resultCardScreen;
+
+                // 2. Render untuk Cetak (Print)
+                const resultRowPrint = `
+                    <tr>
+                        <td>#${rank}</td>
+                        <td>${escapeHTML(name)}</td>
+                        <td>${score}</td>
+                        <td>${escapeHTML(detail)}</td>
+                        <td>${escapeHTML(timestamp)}</td>
+                    </tr>
+                `;
+                resultsContentPrint.innerHTML += resultRowPrint;
             });
         }
 
@@ -231,6 +377,13 @@
                     }
                 });
             }
+        }
+
+        // Listener Tombol Cetak
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print(); // Membuka dialog cetak browser
+            });
         }
     </script>
 </body>
